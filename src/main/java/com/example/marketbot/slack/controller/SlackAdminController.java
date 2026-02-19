@@ -20,7 +20,7 @@ public class SlackAdminController {
 }
 
 /*
-UPDATE slack_user SET team = 'MARKET' WHERE id IN (2, 12, 15, 17);
-UPDATE slack_user SET team = 'ERP' WHERE id IN (6, 11);
-UPDATE slack_user SET team = 'DATA' WHERE id IN (5, 13, 14, 20);
+UPDATE slack_user SET team = 'MARKET' WHERE id IN (4,6,19,22,25,31);
+UPDATE slack_user SET team = 'ERP' WHERE id IN (11, 20, 21);
+UPDATE slack_user SET team = 'DATA' WHERE id IN (12, 18);
 */

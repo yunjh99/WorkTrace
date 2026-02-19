@@ -244,15 +244,6 @@ public class SlackInteractionService {
                 dueDate
         );
 
-        // ✅ 중복 저장 방지 (channelId + messageTs)
-        var existingOpt = slackNotionLinkRepository.findBySlackChannelIdAndSlackMessageTs(channelId, messageTs);
-        if (existingOpt.isPresent()) {
-            SlackNotionLink existing = existingOpt.get();
-            String notionUrl = "https://www.notion.so/" + existing.getNotionPageId().replace("-", "");
-            slackClient.chatPostEphemeral(channelId, receiverUserId, "이미 저장된 업무입니다. Notion 페이지: " + notionUrl);
-            return;
-        }
-
         // ✅ Notion 생성
         JsonNode notionRes = notionWorklogService.create(cmd);
         String notionPageId = notionRes.path("id").asText("");
@@ -455,7 +446,6 @@ public class SlackInteractionService {
                 WorklogEditInitial init = notionWorklogService.parseInitialForEdit(page);
                 watcherIds = (init != null) ? init.initialWatcherSlackUserIds() : List.of();
             } catch (Exception ignore) {
-                // Notion이 느리거나 실패해도, 완료 처리는 진행(참조자 라인만 비게 됨)
                 watcherIds = List.of();
             }
         }
@@ -481,17 +471,7 @@ public class SlackInteractionService {
                 );
 
         // =========================
-        // ✅ 원문 이모지 토글(best-effort)
-        // =========================
-        try {
-            toggleOriginalMessageReactions(link, newStatus);
-        } catch (Exception e) {
-            slackClient.chatPostEphemeral(responseChannelId, clickUserId,
-                    "원문 메시지 이모지 반영에 실패했습니다. 잠시 후 다시 시도해주세요.");
-        }
-
-        // =========================
-        // ✅ receipt 업데이트
+        // ✅ receipt 업데이트 (먼저 화면 반영)
         // =========================
         try {
             slackClient.chatUpdateWithBlocks(responseChannelId, receiptMessageTs, newBlocks);
@@ -502,10 +482,21 @@ public class SlackInteractionService {
         }
 
         // =========================
-        // ✅ 로컬 DB 상태 저장
+        // ✅ 로컬 DB 상태 저장 (먼저!)
         // =========================
         link.setWorklogStatus(newStatus);
-        slackNotionLinkRepository.save(link);
+        // ✅ 집계 조회가 즉시 최신 상태를 보게 하려면 saveAndFlush 추천
+        slackNotionLinkRepository.saveAndFlush(link);
+
+        // =========================
+        // ✅ 원문 이모지 토글(best-effort) (나중!)
+        // =========================
+        try {
+            toggleOriginalMessageReactionsByThread(link);
+        } catch (Exception e) {
+            slackClient.chatPostEphemeral(responseChannelId, clickUserId,
+                    "원문 메시지 이모지 반영에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        }
 
         // =========================
         // ✅ Notion 상태 업데이트(가장 느림, 실패해도 Slack은 반영)
@@ -519,28 +510,52 @@ public class SlackInteractionService {
         }
     }
 
+
     /**
      * ✅ 원문 메시지에 이모지 토글
      * - 진행: ✅ 제거 + 👀 추가
      * - 완료: 👀 제거 + ✅ 추가
      * - 접수: 👀/✅ 둘 다 제거
      */
-    private void toggleOriginalMessageReactions(SlackNotionLink link, String status) {
+    private void toggleOriginalMessageReactionsByThread(SlackNotionLink link) {
         String channelId = link.getSlackChannelId();
-        String messageTs = link.getSlackMessageTs();
 
-        if ("진행".equals(status)) {
-            safeReactionsRemove(channelId, messageTs, EMOJI_CHECK);
-            slackClient.reactionsAdd(channelId, messageTs, EMOJI_EYES);
+        // ✅ 이모지를 달 대상은 "루트 메시지 ts" (threadTs)
+        String rootTs = (link.getSlackThreadTs() == null || link.getSlackThreadTs().isBlank())
+                ? link.getSlackMessageTs()
+                : link.getSlackThreadTs();
 
-        } else if ("완료".equals(status)) {
-            safeReactionsRemove(channelId, messageTs, EMOJI_EYES);
-            slackClient.reactionsAdd(channelId, messageTs, EMOJI_CHECK);
+        // ✅ 같은 쓰레드에 연결된 모든 업무 조회
+        List<SlackNotionLink> links =
+                slackNotionLinkRepository.findAllBySlackChannelIdAndSlackThreadTs(channelId, rootTs);
 
-        } else { // 접수
-            safeReactionsRemove(channelId, messageTs, EMOJI_EYES);
-            safeReactionsRemove(channelId, messageTs, EMOJI_CHECK);
+        // (방어) 혹시 데이터가 비어있으면 일단 둘 다 제거
+        if (links == null || links.isEmpty()) {
+            safeReactionsRemove(channelId, rootTs, EMOJI_EYES);
+            safeReactionsRemove(channelId, rootTs, EMOJI_CHECK);
+            return;
         }
+
+        boolean allDone = links.stream().allMatch(l -> "완료".equals(l.getWorklogStatus()));
+        boolean anyOpen = links.stream().anyMatch(l -> !"완료".equals(l.getWorklogStatus())); // 접수/진행/NULL 포함
+
+        if (allDone) {
+            // ✅ 전부 완료면 ✅
+            safeReactionsRemove(channelId, rootTs, EMOJI_EYES);
+            slackClient.reactionsAdd(channelId, rootTs, EMOJI_CHECK);
+            return;
+        }
+
+        if (anyOpen) {
+            // ✅ 하나라도 미완료면 👀
+            safeReactionsRemove(channelId, rootTs, EMOJI_CHECK);
+            slackClient.reactionsAdd(channelId, rootTs, EMOJI_EYES);
+            return;
+        }
+
+        // ✅ 그 외는 둘 다 제거(거의 안 탐)
+        safeReactionsRemove(channelId, rootTs, EMOJI_EYES);
+        safeReactionsRemove(channelId, rootTs, EMOJI_CHECK);
     }
 
     /** remove는 이미 없으면 에러 날 수 있어 흡수 */

@@ -9,19 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(
-        name = "slack_notion_link",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_slack_message",
-                        columnNames = {"slack_channel_id", "slack_message_ts"}
-                )
-        }
-)
+@Table(name = "slack_notion_link") // uniqueConstraints 제거
 @Getter
 @Setter
 @NoArgsConstructor
-public class SlackNotionLink {
+public class SlackNotionLink  {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
