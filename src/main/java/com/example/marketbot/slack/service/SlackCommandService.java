@@ -13,6 +13,10 @@ import tools.jackson.databind.JsonNode;
 import java.time.LocalDate;
 import java.util.Map;
 
+/**
+ * Slash Command로 요청된 개인 업무 현황을 조회해 Slack에 비동기로 응답합니다.
+ * 즉시 HTTP 응답이 필요한 Controller와 시간이 걸리는 업무 조회를 분리합니다.
+ */
 @Service
 @RequiredArgsConstructor
 public class SlackCommandService {

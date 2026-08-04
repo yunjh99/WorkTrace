@@ -4,6 +4,7 @@ import com.example.marketbot.slack.client.SlackClient;
 import com.example.marketbot.slack.domain.SlackUser;
 import com.example.marketbot.slack.repository.SlackUserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 
@@ -12,8 +13,13 @@ import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Slack 사용자 정보를 조회하고 일정 시간 동안 로컬 DB에 캐시합니다.
+ * 사용자 이름과 멘션 변환 과정에서 Slack API 호출이 반복되는 것을 줄입니다.
+ */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SlackUserService {
 
     private final SlackUserRepository slackUserRepository;
@@ -86,6 +92,7 @@ public class SlackUserService {
             return name;
 
         } catch (Exception e) {
+            log.warn("Failed to refresh Slack user. userId={}, using cached value when available", userId, e);
             if (existing != null && existing.getDisplayName() != null && !existing.getDisplayName().isBlank()) {
                 return existing.getDisplayName();
             }

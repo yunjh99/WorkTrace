@@ -6,22 +6,26 @@ import com.example.marketbot.slack.repository.SlackUserRepository;
 import com.example.marketbot.worklog.dto.WorklogCreateCommand;
 import com.example.marketbot.worklog.dto.WorklogEditInitial;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 기존 Notion 데이터베이스의 업무 페이지를 생성·조회·수정합니다.
+ * Slack 전용 전환 시 Slack 내부 저장 모델로 대체해야 하는 기존 연동 서비스입니다.
+ */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotionWorklogService {
 
     private final NotionClient notionClient;
-    private final ObjectMapper om;
     private final SlackUserRepository slackUserRepository; // ✅ displayName -> slackUserId 변환용
 
     @Value("${notion.database.id}")
@@ -51,21 +55,8 @@ public class NotionWorklogService {
                 "properties", buildProperties(cmd)
         );
 
-        // ✅ payload 로그(선택)
-        try {
-            System.out.println("========== [NOTION PAYLOAD] ==========");
-            System.out.println(om.writerWithDefaultPrettyPrinter().writeValueAsString(payload));
-            System.out.println("======================================");
-        } catch (Exception ignored) {}
-
         JsonNode res = notionClient.post(PAGES_URL, payload);
-
-        // ✅ 응답 로그(선택)
-        try {
-            System.out.println("========== [NOTION RESPONSE] ==========");
-            System.out.println(res.toPrettyString());
-            System.out.println("=======================================");
-        } catch (Exception ignored) {}
+        log.info("Notion worklog created. pageId={}", res.path("id").asText("unknown"));
 
         return res;
     }

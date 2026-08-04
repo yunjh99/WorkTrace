@@ -1,14 +1,12 @@
 package com.example.marketbot.slack.controller;
 
 import com.example.marketbot.slack.service.SlackCommandService;
-import com.example.marketbot.slack.service.SlackEventService;
 import com.example.marketbot.slack.service.SlackInteractionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 /**
  * ✅ 왜 필요한가?
@@ -24,18 +22,15 @@ import tools.jackson.databind.ObjectMapper;
 @RestController
 @RequestMapping("/slack")
 @RequiredArgsConstructor
+@Slf4j
 public class SlackController {
 
     private final SlackInteractionService slackInteractionService;
-    private final SlackEventService slackEventService;
-    private final ObjectMapper om;   // ✅ 추가
     private final SlackCommandService slackCommandService;
 
     @PostMapping("/interaction")
     public ResponseEntity<String> interaction(@RequestParam("payload") String payload) {
-        System.out.println("========== [SLACK RAW payload param] ==========");
-        System.out.println(payload);
-        System.out.println("==============================================");
+        log.debug("Slack interaction request received");
 
         // ✅ payload는 JSON 문자열. service에서 파싱/분기 처리한다.
         slackInteractionService.handle(payload);
@@ -45,28 +40,13 @@ public class SlackController {
         return ResponseEntity.ok("");
     }
 
-    // ✅ Slack Events API (json body)
-    @PostMapping("/events")
-    public ResponseEntity<String> events(@RequestBody String body) throws Exception {
-        JsonNode payload = om.readTree(body);
-
-        // url_verification 처리
-        if ("url_verification".equals(payload.path("type").asText())) {
-            String challenge = payload.path("challenge").asText();
-            return ResponseEntity.ok(challenge);
-        }
-
-        // event_callback 처리
-        slackEventService.handle(payload);
-        return ResponseEntity.ok("ok");
-    }
-
     @PostMapping(value="/command", consumes="application/x-www-form-urlencoded")
     public ResponseEntity<String> command(@RequestParam MultiValueMap<String,String> form) {
         String command = form.getFirst("command");     // "/업무현황"
         String userId = form.getFirst("user_id");      // 실행자
         String responseUrl = form.getFirst("response_url");
 
+        log.debug("Slack command request received. command={}, userId={}", command, userId);
         slackCommandService.handleCommand(command, userId, responseUrl);
 
         return ResponseEntity.ok("조회 중...");

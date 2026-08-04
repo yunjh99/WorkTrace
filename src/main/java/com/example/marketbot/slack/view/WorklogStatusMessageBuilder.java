@@ -6,6 +6,10 @@ import tools.jackson.databind.JsonNode;
 
 import java.util.*;
 
+/**
+ * 개인별 미완료 업무와 완료 업무 현황을 Slack 메시지 형태로 구성합니다.
+ * 조회 결과를 Block Kit 표현으로 변환하는 책임만 담당합니다.
+ */
 @Component
 @RequiredArgsConstructor
 public class WorklogStatusMessageBuilder {

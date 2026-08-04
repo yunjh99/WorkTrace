@@ -8,6 +8,10 @@ import org.springframework.web.client.RestTemplate;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * 기존 Notion REST API 호출을 캡슐화한 클라이언트입니다.
+ * 인증 헤더와 응답 검증을 한곳에서 처리하지만, Slack 전용 전환 시 제거 대상입니다.
+ */
 @Component
 @RequiredArgsConstructor
 public class NotionClient {

@@ -8,6 +8,11 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 접수된 업무와 Slack 원문·접수 메시지의 연결 정보를 저장하는 엔티티입니다.
+ * 현재는 기존 Notion 페이지 ID도 보유하므로 Slack 전용 전환 시 Worklog 엔티티로
+ * 이름과 필드를 정리할 대상입니다.
+ */
 @Entity
 @Table(name = "slack_notion_link") // uniqueConstraints 제거
 @Getter

@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 접수된 업무의 담당자, 기한, 상태를 보여주는 Slack Block Kit 메시지를 생성합니다.
+ * 표시 형식을 서비스에서 분리하여 메시지 레이아웃 변경의 영향을 제한합니다.
+ */
 @Component
 public class WorklogReceiptMessageBuilder {
 

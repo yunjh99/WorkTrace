@@ -7,6 +7,10 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Set;
 
+/**
+ * 업무별 담당자 관계를 저장하고 담당자의 업무 목록을 조회합니다.
+ * 개인 업무 현황과 상태 변경 권한 판정에 필요한 관계 조회를 담당합니다.
+ */
 public interface SlackNotionLinkAssigneeRepository extends JpaRepository<SlackNotionLinkAssignee, Long> {
 
     @Query("select a.slackUserId from SlackNotionLinkAssignee a where a.link.id = :linkId")

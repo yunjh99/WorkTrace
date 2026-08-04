@@ -10,6 +10,10 @@ import tools.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
 
+/**
+ * 워크스페이스의 활성 사용자 목록을 Slack API에서 읽어 로컬 DB와 동기화합니다.
+ * 담당자 선택과 팀 매핑에 사용할 사용자 기준 데이터를 최신 상태로 유지합니다.
+ */
 @Service
 @RequiredArgsConstructor
 public class SlackUserSyncService {

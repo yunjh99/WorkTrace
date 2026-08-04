@@ -12,6 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * 등록된 업무의 제목, 내용, 담당자, 기한을 하나의 트랜잭션으로 수정합니다.
+ * 상호작용 해석과 데이터 변경을 분리해 수정 규칙을 독립적으로 관리합니다.
+ */
 @Service
 @RequiredArgsConstructor
 public class WorklogEditService {

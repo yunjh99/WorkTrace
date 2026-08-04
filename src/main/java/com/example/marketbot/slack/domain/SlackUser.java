@@ -8,6 +8,10 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Slack 사용자의 식별자, 표시 이름, 소속 팀을 저장하는 엔티티입니다.
+ * 담당자 배정과 멘션 표시 시 매번 Slack API를 조회하지 않도록 로컬 기준 정보를 제공합니다.
+ */
 @Entity
 @Table(
         name = "slack_user",

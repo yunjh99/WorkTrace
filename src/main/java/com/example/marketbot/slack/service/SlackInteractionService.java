@@ -14,6 +14,7 @@ import com.example.marketbot.worklog.domain.Team;
 import com.example.marketbot.worklog.dto.WorklogCreateCommand;
 import com.example.marketbot.worklog.dto.WorklogEditInitial;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -25,8 +26,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 메시지 Shortcut, 모달 제출, 버튼 동작 등 Slack 상호작용의 업무 흐름을 조정합니다.
+ * 입력 유형을 판별하고 업무 등록, 수정, 메시지 갱신에 필요한 컴포넌트를 연결합니다.
+ */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SlackInteractionService {
 
     private final ObjectMapper om;
@@ -76,9 +82,9 @@ public class SlackInteractionService {
                 return;
             }
 
-            System.out.println("[SLACK] Unsupported interaction type: " + type);
+            log.warn("Unsupported Slack interaction type. type={}", type);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to process Slack interaction", e);
         }
     }
 
@@ -445,7 +451,9 @@ public class SlackInteractionService {
                 JsonNode page = notionWorklogService.getPage(link.getNotionPageId());
                 WorklogEditInitial init = notionWorklogService.parseInitialForEdit(page);
                 watcherIds = (init != null) ? init.initialWatcherSlackUserIds() : List.of();
-            } catch (Exception ignore) {
+            } catch (Exception e) {
+                log.warn("Failed to load watchers from Notion. linkId={}, pageId={}",
+                        linkId, link.getNotionPageId(), e);
                 watcherIds = List.of();
             }
         }
@@ -476,6 +484,8 @@ public class SlackInteractionService {
         try {
             slackClient.chatUpdateWithBlocks(responseChannelId, receiptMessageTs, newBlocks);
         } catch (Exception e) {
+            log.error("Failed to update Slack receipt message. linkId={}, channelId={}",
+                    linkId, responseChannelId, e);
             slackClient.chatPostEphemeral(responseChannelId, clickUserId,
                     "receipt 메시지 업데이트에 실패했습니다. 잠시 후 다시 시도해주세요.");
             return;
@@ -494,6 +504,8 @@ public class SlackInteractionService {
         try {
             toggleOriginalMessageReactionsByThread(link);
         } catch (Exception e) {
+            log.warn("Failed to update original message reactions. linkId={}, channelId={}",
+                    linkId, link.getSlackChannelId(), e);
             slackClient.chatPostEphemeral(responseChannelId, clickUserId,
                     "원문 메시지 이모지 반영에 실패했습니다. 잠시 후 다시 시도해주세요.");
         }
@@ -504,6 +516,8 @@ public class SlackInteractionService {
         try {
             notionWorklogService.updateStatus(link.getNotionPageId(), newStatus);
         } catch (Exception e) {
+            log.error("Failed to update Notion status. linkId={}, pageId={}, status={}",
+                    linkId, link.getNotionPageId(), newStatus, e);
             slackClient.chatPostEphemeral(responseChannelId, clickUserId,
                     "Slack 상태는 반영됐지만 Notion 상태 업데이트에 실패했습니다. (네트워크/Notion 지연)\n" +
                             "잠시 후 다시 눌러 동기화해주세요.");
@@ -562,7 +576,10 @@ public class SlackInteractionService {
     private void safeReactionsRemove(String channelId, String messageTs, String emoji) {
         try {
             slackClient.reactionsRemove(channelId, messageTs, emoji);
-        } catch (Exception ignore) {}
+        } catch (Exception e) {
+            log.debug("Slack reaction was not removed. channelId={}, messageTs={}, emoji={}",
+                    channelId, messageTs, emoji, e);
+        }
     }
 
     /* =========================
