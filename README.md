@@ -75,7 +75,7 @@ Slack 메시지의 바로가기에서 업무 등록 모달을 열고, 입력한 
 
 `/업무현황` 명령어를 통해 개인별 미완료 업무와 당일 완료 업무를 Slack에서 조회합니다.
 
-<img src="docs/worklog-status.gif" width="800" alt="Slack 개인 업무 현황 조회 시연">
+<img src="docs/worklog-status-1.gif" width="800" alt="Slack 개인 업무 현황 조회 시연">
 
 ## 동작 흐름
 
