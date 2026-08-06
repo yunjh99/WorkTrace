@@ -40,8 +40,8 @@ public class SlackController {
         return ResponseEntity.ok("");
     }
 
-    @PostMapping(value="/command", consumes="application/x-www-form-urlencoded")
-    public ResponseEntity<String> command(@RequestParam MultiValueMap<String,String> form) {
+    @PostMapping(value = "/command", consumes = "application/x-www-form-urlencoded")
+    public ResponseEntity<String> command(@RequestParam MultiValueMap<String, String> form) {
         String command = form.getFirst("command");     // "/업무현황"
         String userId = form.getFirst("user_id");      // 실행자
         String responseUrl = form.getFirst("response_url");
