@@ -63,6 +63,20 @@ Notion은 기존에 사용하던 업무 도구는 아니었지만, 실제 업무
 - Slack 워크스페이스의 사용자 목록을 MySQL에 동기화
 - Slack 사용자 ID와 표시 이름, 담당 팀을 업무 처리에 활용
 
+## 시연
+
+### 업무 등록
+
+Slack 메시지의 바로가기에서 업무 등록 모달을 열고, 입력한 업무를 Notion에 생성한 뒤 원본 메시지의 스레드에 접수 결과를 표시합니다.
+
+<img src="docs/worklog-registration.gif" width="800" alt="Slack 메시지 기반 업무 등록 시연">
+
+### 업무 현황 조회
+
+`/업무현황` 명령어를 통해 개인별 미완료 업무와 당일 완료 업무를 Slack에서 조회합니다.
+
+<img src="docs/worklog-status.gif" width="800" alt="Slack 개인 업무 현황 조회 시연">
+
 ## 동작 흐름
 
 ```mermaid
