@@ -4,7 +4,6 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-/src/main/resources/application.properties
 
 ### STS ###
 .apt_generated
@@ -36,3 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Personal interview notes ###
+/PROJECT_INTERVIEW_GUIDE.md
+
+### Codex local settings ###
+/.codex/
